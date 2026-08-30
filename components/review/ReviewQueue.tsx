@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery } from "convex/react";
+import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import { useState } from "react";
 
 import { api } from "@/convex/_generated/api";
@@ -17,6 +17,26 @@ const groups = [
 ] as const;
 
 export function ReviewQueue() {
+  const { isLoading, isAuthenticated } = useConvexAuth();
+
+  if (isLoading) {
+    return <main className="review-shell"><p className="loading-note">Connecting your private workspace…</p></main>;
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <main className="review-shell empty-review">
+        <p className="eyebrow">Private workspace</p>
+        <h1>Sign in to load the evidence queue.</h1>
+        <p>Your Clerk session is not yet connected to the review workspace. Refresh after signing in to continue.</p>
+      </main>
+    );
+  }
+
+  return <AuthenticatedReviewQueue />;
+}
+
+function AuthenticatedReviewQueue() {
   const candidates = useQuery(api.candidates.listReview);
   const approve = useMutation(api.candidates.approve);
   const reject = useMutation(api.candidates.reject);
