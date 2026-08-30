@@ -2,11 +2,11 @@
 
 Carousel Creator is a basic framework for automating the creation of social-media carousels, initially focused on Instagram.
 
-The first intended use case is helping local newsletters and local media outlets turn structured content—such as **“Top 10 events in [city]”**—into a clear, publishable carousel.
+The first intended use case is helping a solo Coimbra newsletter operator turn sourced engineering and technology events into a clear, publishable weekly carousel.
 
 ## Project status
 
-This project is at the initial framework stage. The repository currently contains the product brief only; implementation choices, integrations, and deployment details are still to be defined.
+The private Next.js, Clerk, and Convex foundation is under active development. Event intake, editorial review, template editing, and export are tracked as later implementation slices.
 
 ## Goals
 
@@ -18,7 +18,7 @@ This project is at the initial framework stage. The repository currently contain
 
 ## Intended workflow
 
-1. Select a content format, for example `Top 10 events in Lisbon`.
+1. Select the next Monday-Sunday calendar week for Coimbra and nearby areas.
 2. Enter or import the items to include.
 3. Add supporting details such as descriptions, dates, locations, links, and images.
 4. Generate a consistent set of carousel slides.
@@ -73,16 +73,20 @@ The initial framework will be useful when a user can:
 - Export or adapt content for other social and newsletter formats.
 - Add scheduling and publishing integrations after the review workflow is reliable.
 
-## Development notes
+## Local development
 
-Technical decisions are intentionally left open until the first implementation pass. Before building, define:
+Use Node.js 22 (`nvm use` reads `.nvmrc`), then install and validate the project:
 
-- The input format and validation rules.
-- The rendering/export approach.
-- The supported image dimensions and file formats.
-- Template and branding configuration.
-- Whether generated content is local-only or backed by a service.
-- How drafts, revisions, and exported assets are stored.
+```bash
+npm install
+cp .env.example .env.local
+npm test
+npm run typecheck
+npm run lint
+npm run build
+```
+
+Configure Clerk and Convex using the variable names in `.env.example`. Keep all values out of git. The operator email must be configured in both the Vercel and Convex environments. Run `npx convex dev` after connecting a development deployment; it validates the schema and creates Convex's generated type files.
 
 ## License
 
