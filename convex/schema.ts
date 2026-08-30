@@ -14,6 +14,7 @@ const conflictValidator = v.object({
   ),
   values: v.array(v.string()),
   resolved: v.boolean(),
+  selectedValue: v.optional(v.string()),
 });
 
 export default defineSchema({
