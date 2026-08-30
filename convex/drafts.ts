@@ -86,6 +86,14 @@ export const updateSlide = mutationGeneric({
     const factualReviewRequired = Boolean(slide.candidateId && (slide.title !== args.title || slide.body !== args.body));
     const { slideId: _slideId, ...changes } = args;
     void _slideId;
-    await ctx.db.patch(slide._id, { ...changes, factualReviewRequired, updatedAt: Date.now() });
+    await ctx.db.patch(slide._id, {
+      ...changes,
+      factualReviewRequired,
+      finalReviewComplete: factualReviewRequired ? false : changes.finalReviewComplete,
+      updatedAt: Date.now(),
+    });
+    if (factualReviewRequired) {
+      await ctx.db.patch(slide.draftId, { needsFinalReview: true, updatedAt: Date.now() });
+    }
   },
 });
