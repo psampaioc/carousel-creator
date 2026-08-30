@@ -1,6 +1,8 @@
 import { currentUser } from "@clerk/nextjs/server";
 import Link from "next/link";
 
+import { ReviewQueue } from "@/components/review/ReviewQueue";
+
 export default async function WorkspacePage() {
   if (
     !process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ||
@@ -29,18 +31,7 @@ export default async function WorkspacePage() {
     return <WorkspaceState title="Operator access required" detail="This account is not on the workspace allowlist." />;
   }
 
-  return (
-    <main className="shell">
-      <section className="panel">
-        <p className="eyebrow">Private workspace</p>
-        <h1>No weekly draft yet.</h1>
-        <p>
-          The foundation is connected. Sheet imports and the editorial review
-          queue arrive in the next implementation slice.
-        </p>
-      </section>
-    </main>
-  );
+  return <ReviewQueue />;
 }
 
 function WorkspaceState({ title, detail }: { title: string; detail: string }) {

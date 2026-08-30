@@ -1,7 +1,15 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { assertOperatorIdentity } from "@/convex/authz";
-import { assertSourceEvidence, createEvidenceBacked, list } from "@/convex/candidates";
+import {
+  approve,
+  assertSourceEvidence,
+  createEvidenceBacked,
+  list,
+  listReview,
+  reject,
+  resolveConflict,
+} from "@/convex/candidates";
 import { assertCandidateStatus } from "@/convex/validation";
 
 const unauthenticatedContext = {
@@ -40,6 +48,22 @@ describe("private application boundaries", () => {
           collectedAt: 1,
           isOfficial: true,
         },
+      } as never),
+    ).rejects.toThrow("Authentication required");
+    await expect(handlerOf(listReview)(unauthenticatedContext as never, {} as never)).rejects.toThrow(
+      "Authentication required",
+    );
+    await expect(handlerOf(approve)(unauthenticatedContext as never, { candidateId: "candidate_1" } as never)).rejects.toThrow(
+      "Authentication required",
+    );
+    await expect(handlerOf(reject)(unauthenticatedContext as never, { candidateId: "candidate_1" } as never)).rejects.toThrow(
+      "Authentication required",
+    );
+    await expect(
+      handlerOf(resolveConflict)(unauthenticatedContext as never, {
+        candidateId: "candidate_1",
+        field: "startAt",
+        selectedValue: "2026-09-02",
       } as never),
     ).rejects.toThrow("Authentication required");
   });
