@@ -2,6 +2,7 @@ import { mutationGeneric, queryGeneric } from "convex/server";
 import { v } from "convex/values";
 
 import { requireOperator } from "./authz";
+import type { Id } from "./_generated/dataModel";
 
 const candidateId = v.id("candidates");
 const draftId = v.id("drafts");
@@ -68,7 +69,24 @@ export const get = queryGeneric({
     const draft = await ctx.db.get(args.draftId);
     if (!draft) return null;
     const slides = await ctx.db.query("draftSlides").withIndex("by_draft", (q) => q.eq("draftId", args.draftId)).collect();
-    return { draft, slides: slides.sort((a, b) => a.position - b.position) };
+    const enrichedSlides = await Promise.all(slides.map(async (slide) => ({
+      ...slide,
+      images: slide.candidateId
+        ? (await ctx.db.query("imageCandidates").withIndex("by_candidate", (q) => q.eq("candidateId", slide.candidateId!)).collect())
+          .sort((left, right) => {
+            const provenance: Record<string, number> = { official: 0, announcement: 1, generated: 2 };
+            if (left.sortOrder !== undefined || right.sortOrder !== undefined) return (left.sortOrder ?? 999) - (right.sortOrder ?? 999);
+            return provenance[left.provenance] - provenance[right.provenance];
+          })
+        : [],
+    })));
+    const onlineEvents = (await Promise.all(draft.onlineCandidateIds.map(async (id: Id<"candidates">) => {
+      const candidate = await ctx.db.get(id);
+      if (!candidate) return null;
+      const sources = await ctx.db.query("sources").withIndex("by_candidate", (q) => q.eq("candidateId", id)).collect();
+      return { _id: candidate._id, title: candidate.title, startAt: candidate.startAt, sources };
+    }))).filter((event) => event !== null);
+    return { draft, slides: enrichedSlides.sort((a, b) => a.position - b.position), onlineEvents };
   },
 });
 
@@ -83,7 +101,8 @@ export const updateSlide = mutationGeneric({
       const image = await ctx.db.get(args.imageCandidateId);
       if (!image || image.candidateId !== slide.candidateId) throw new Error("Image does not belong to this event");
     }
-    const factualReviewRequired = Boolean(slide.candidateId && (slide.title !== args.title || slide.body !== args.body));
+    const factualCopyChanged = Boolean(slide.candidateId && (slide.title !== args.title || slide.body !== args.body));
+    const factualReviewRequired = slide.factualReviewRequired || factualCopyChanged;
     const { slideId: _slideId, ...changes } = args;
     void _slideId;
     await ctx.db.patch(slide._id, {
@@ -95,5 +114,35 @@ export const updateSlide = mutationGeneric({
     if (factualReviewRequired) {
       await ctx.db.patch(slide.draftId, { needsFinalReview: true, updatedAt: Date.now() });
     }
+  },
+});
+
+export const moveSlide = mutationGeneric({
+  args: { slideId, direction: v.union(v.literal("up"), v.literal("down")) },
+  handler: async (ctx, args) => {
+    await requireOperator(ctx);
+    const slide = await ctx.db.get(args.slideId);
+    if (!slide || slide.kind !== "event") throw new Error("Only event slides can be reordered");
+    const slides = (await ctx.db.query("draftSlides").withIndex("by_draft", (q) => q.eq("draftId", slide.draftId)).collect()).sort((a, b) => a.position - b.position);
+    const eventSlides = slides.filter((item) => item.kind === "event");
+    const index = eventSlides.findIndex((item) => item._id === slide._id);
+    const destination = args.direction === "up" ? index - 1 : index + 1;
+    if (destination < 0 || destination >= eventSlides.length) return;
+    const adjacent = eventSlides[destination];
+    await ctx.db.patch(slide._id, { position: adjacent.position, updatedAt: Date.now() });
+    await ctx.db.patch(adjacent._id, { position: slide.position, updatedAt: Date.now() });
+  },
+});
+
+export const completeSlideReview = mutationGeneric({
+  args: { slideId },
+  handler: async (ctx, args) => {
+    await requireOperator(ctx);
+    const slide = await ctx.db.get(args.slideId);
+    if (!slide) throw new Error("Slide not found");
+    await ctx.db.patch(slide._id, { factualReviewRequired: false, finalReviewComplete: true, updatedAt: Date.now() });
+    const slides = await ctx.db.query("draftSlides").withIndex("by_draft", (q) => q.eq("draftId", slide.draftId)).collect();
+    const hasPendingReview = slides.some((item) => item._id !== slide._id && item.factualReviewRequired && !item.finalReviewComplete);
+    await ctx.db.patch(slide.draftId, { needsFinalReview: hasPendingReview, updatedAt: Date.now() });
   },
 });

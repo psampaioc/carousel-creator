@@ -1,3 +1,4 @@
-export function EventSlide({ title, body, accent, shape, number }: { title: string; body: string; accent: string; shape: string; number: number }) {
-  return <article className={`instagram-slide event-slide shape-${shape}`} style={{ "--slide-accent": accent } as React.CSSProperties}><p className="slide-mark">COIMBRA / {String(number).padStart(2, "0")}</p><div className="slide-orbit" /><h2>{title}</h2><p>{body}</p><footer>Swipe for the week →</footer></article>;
+export function EventSlide({ title, body, accent, shape, number, image }: { title: string; body: string; accent: string; shape: string; number: number; image?: { driveFileId: string; provenance: string } }) {
+  const imageUrl = image ? `https://drive.google.com/thumbnail?id=${encodeURIComponent(image.driveFileId)}&sz=w1600` : undefined;
+  return <article className={`instagram-slide event-slide shape-${shape}`} style={{ "--slide-accent": accent, "--slide-image": imageUrl ? `url(${imageUrl})` : undefined } as React.CSSProperties}><p className="slide-mark">COIMBRA / {String(number).padStart(2, "0")}</p>{image ? <span className={`slide-image-label provenance-${image.provenance}`}>{image.provenance === "generated" ? "AI-generated image" : `${image.provenance} image`}</span> : null}<div className="slide-orbit" /><h2>{title}</h2><p>{body}</p><footer>Swipe for the week →</footer></article>;
 }
