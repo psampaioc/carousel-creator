@@ -1,0 +1,1 @@
+export function CoverSlide({ title, body, accent }: { title: string; body: string; accent: string }) { return <article className="instagram-slide cover-slide" style={{ "--slide-accent": accent } as React.CSSProperties}><p className="slide-mark">COIMBRA FIELD GUIDE</p><h2>{title}</h2><p>{body}</p><strong>↓ events for the week</strong></article>; }

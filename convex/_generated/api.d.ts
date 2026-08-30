@@ -10,6 +10,7 @@
 
 import type * as authz from "../authz.js";
 import type * as candidates from "../candidates.js";
+import type * as drafts from "../drafts.js";
 import type * as driveMedia from "../driveMedia.js";
 import type * as sheetImport from "../sheetImport.js";
 import type * as sheetImportAction from "../sheetImportAction.js";
@@ -24,6 +25,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   authz: typeof authz;
   candidates: typeof candidates;
+  drafts: typeof drafts;
   driveMedia: typeof driveMedia;
   sheetImport: typeof sheetImport;
   sheetImportAction: typeof sheetImportAction;

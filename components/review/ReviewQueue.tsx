@@ -1,6 +1,7 @@
 "use client";
 
 import { useConvexAuth, useMutation, useQuery } from "convex/react";
+import Link from "next/link";
 import { useState } from "react";
 
 import { api } from "@/convex/_generated/api";
@@ -55,7 +56,7 @@ function AuthenticatedReviewQueue() {
     <main className="review-shell">
       <header className="review-header">
         <div><p className="eyebrow">Editorial review · next calendar week</p><h1>Choose events you can stand behind.</h1></div>
-        <div className="queue-stats"><strong>{candidates.length}</strong><span>researched events</span><strong>{ranked.coimbra.filter((candidate) => candidate.weekMatch).length}</strong><span>in Coimbra this week</span></div>
+        <div><div className="queue-stats"><strong>{candidates.length}</strong><span>researched events</span><strong>{ranked.coimbra.filter((candidate) => candidate.weekMatch).length}</strong><span>in Coimbra this week</span></div><Link className="text-link" href="/carousel">Build weekly carousel</Link></div>
       </header>
       {ranked.isSparse ? <p className="sparse-note">Coimbra is sparse for this week. Wider-area options are shown separately below—nothing is being passed off as local.</p> : null}
       <section className="review-layout">
