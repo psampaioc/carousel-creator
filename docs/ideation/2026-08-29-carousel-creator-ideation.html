@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ideation: Carousel Creator</title>
+  <style>
+    :root { --ink:#182126; --muted:#59666e; --paper:#fbfaf7; --line:#d9ded9; --accent:#0d7666; --accent-soft:#e5f3ef; --warm:#fcf0d6; --card:#fff; --danger:#8f3d31; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:linear-gradient(135deg,#eef5f2 0%,var(--paper) 45%,#fdf4e8 100%); color:var(--ink); font:16px/1.55 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    main { width:min(960px, calc(100% - 32px)); margin:44px auto 72px; }
+    header { padding:34px; border:1px solid var(--line); border-radius:24px; background:rgba(255,255,255,.78); box-shadow:0 18px 50px rgba(26,51,47,.08); }
+    .eyebrow { margin:0 0 8px; color:var(--accent); font-size:.74rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; }
+    h1 { max-width:18ch; margin:0; font-size:clamp(2.2rem,5vw,4.2rem); line-height:1.03; letter-spacing:-.055em; }
+    h2 { margin:44px 0 16px; font-size:1.5rem; letter-spacing:-.025em; }
+    h3 { margin:0; font-size:1.2rem; letter-spacing:-.02em; }
+    p { max-width:72ch; }
+    a { color:var(--accent); text-underline-offset:3px; }
+    .meta, .jump { display:flex; flex-wrap:wrap; gap:8px; margin-top:22px; }
+    .chip { border:1px solid #b5d8ce; border-radius:999px; padding:4px 10px; background:var(--accent-soft); color:#15594e; font-size:.8rem; font-weight:750; }
+    .lede { margin:20px 0 0; max-width:58ch; color:#334149; font-size:1.1rem; }
+    .callout { margin-top:20px; padding:16px 18px; border-radius:14px; background:var(--warm); border:1px solid #efd7aa; }
+    .flow { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin:20px 0; }
+    .flow div { position:relative; min-height:92px; padding:15px; border:1px solid var(--line); border-radius:14px; background:var(--card); font-weight:700; }
+    .flow span { display:block; margin-top:4px; color:var(--muted); font-size:.84rem; font-weight:500; }
+    .flow div:not(:last-child)::after { content:"→"; position:absolute; right:-10px; top:31px; z-index:1; color:var(--accent); font-size:1.25rem; }
+    .context { padding:20px 22px; border-left:4px solid var(--accent); background:#f3faf8; border-radius:0 14px 14px 0; }
+    .axes { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; padding:0; list-style:none; }
+    .axes li { padding:13px 14px; border:1px solid var(--line); border-radius:12px; background:var(--card); }
+    .jump a { padding:7px 10px; border-radius:999px; background:#fff; border:1px solid var(--line); font-size:.86rem; text-decoration:none; }
+    article { margin:18px 0; padding:25px; border:1px solid var(--line); border-radius:18px; background:rgba(255,255,255,.88); }
+    .idea-head { display:flex; align-items:flex-start; gap:12px; }
+    .rank { flex:none; display:grid; place-items:center; width:32px; height:32px; border-radius:50%; background:var(--accent); color:#fff; font-weight:800; }
+    dl { display:grid; grid-template-columns:112px 1fr; gap:8px 16px; margin:20px 0 0; }
+    dt { color:var(--muted); font-size:.86rem; font-weight:750; }
+    dd { margin:0; }
+    table { width:100%; border-collapse:collapse; background:#fff; border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+    th, td { padding:12px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top; }
+    th { background:#f2f5f3; font-size:.83rem; text-transform:uppercase; letter-spacing:.05em; }
+    tr:last-child td { border-bottom:0; }
+    footer { margin-top:45px; color:var(--muted); font-size:.84rem; }
+    @media (max-width:650px) { main { width:min(100% - 22px,960px); margin-top:16px; } header, article { padding:21px; } .flow, .axes { grid-template-columns:1fr; } .flow div::after { display:none; } dl { grid-template-columns:1fr; gap:2px; } dd { margin-bottom:12px; } }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <p class="eyebrow">Ideation · 2026-08-29</p>
+      <h1>Carousel Creator: a useful live-demo slice</h1>
+      <p class="lede">A ranked set of directions for an Instagram-first tool for local newsletters and media. The stack is fixed: Next.js, Convex, and Vercel. The decision is which product promise is specific enough to be useful and contained enough to execute convincingly.</p>
+      <div class="meta"><span class="chip">Focus: local social content</span><span class="chip">Stack: Next.js · Convex · Vercel</span><span class="chip">Output: human-reviewed carousel</span></div>
+      <div class="callout"><strong>Recommendation:</strong> build a constrained local-events storyboard, not a generic design editor. Use normal web layout—HTML and CSS rendered by Next.js—for the first slide system. A canvas, drag-and-drop editor, publishing automation, and AI event discovery would make the demo broader but less credible.</div>
+    </header>
+
+    <section id="grounding-context">
+      <h2>Grounding Context</h2>
+      <div class="context">
+        <p><strong>The repo’s brief already sets the product boundary:</strong> structured local items become a consistent carousel; a person reviews copy and details before export; reusable templates, preview/editing, and Instagram-friendly export belong in the first version. Automatic fact verification, autonomous publishing, broad platform support, analytics, and heavyweight brand operations do not.</p>
+        <p>Your existing Simple MP3 Creator demonstrates an ability to ship a real web workflow with a Next.js front end, Vercel deployment, persistent jobs, clear state, and careful hosted validation. Here, that strength should show up as a finished create → review → export loop—not as a large feature count.</p>
+        <p>External grounding reinforces the distinction: Canva already offers a huge template catalog and a full drag-and-drop editor. The opportunity is a local-editorial workflow that makes <em>information ready for publishing</em>, rather than competing with a general-purpose design suite. Convex can safely hold drafts and images, but asset URLs need deliberate access handling; Vercel gives every Git change a preview URL, which is excellent for rehearsing and showing the demo.</p>
+      </div>
+      <div class="flow" aria-label="Recommended product flow">
+        <div>1. Pick a format<span>Top 5 events this weekend</span></div>
+        <div>2. Add local items<span>title, time, place, source, image</span></div>
+        <div>3. Review readiness<span>fix missing or crowded content</span></div>
+        <div>4. Export slides<span>publish manually to Instagram</span></div>
+      </div>
+    </section>
+
+    <section id="topic-axes">
+      <h2>Topic Axes</h2>
+      <ul class="axes">
+        <li><strong>Editorial structure</strong><br>Turn a list into a story with a hook, useful sequence, and close.</li>
+        <li><strong>Local-information quality</strong><br>Make dates, venues, sources, and images visible enough to check.</li>
+        <li><strong>Review and trust</strong><br>Preserve human control instead of hiding uncertainty behind automation.</li>
+        <li><strong>Demo legibility</strong><br>Show one crisp, end-to-end outcome that can be understood in minutes.</li>
+        <li><strong>Reusable product foundation</strong><br>Use the fixed stack where persistence and deploy previews genuinely add value.</li>
+      </ul>
+    </section>
+
+    <section id="ranked-ideas">
+      <h2>Ranked Ideas</h2>
+      <nav class="jump" aria-label="Idea jump list">
+        <a href="#idea-1">1. Local Weekender</a><a href="#idea-2">2. Readiness Rail</a><a href="#idea-3">3. Format Cards</a><a href="#idea-4">4. Demo Mode</a><a href="#idea-5">5. Reviewable Drafts</a><a href="#idea-6">6. DOM-first Slides</a>
+      </nav>
+
+      <article id="idea-1">
+        <div class="idea-head"><span class="rank">1</span><div><h3>Local Weekender</h3><p>Make one strong promise: turn five vetted events into a 7-slide “This Weekend in Lisbon” carousel—cover, five event cards, and a closing slide. The user begins with structured event details, sees a real carousel immediately, edits it, and exports it.</p></div></div>
+        <dl><dt>Axis</dt><dd>Editorial structure</dd><dt>Basis</dt><dd><strong>direct:</strong> the repository’s first named use case is “Top 10 events in [city]”; the discovery issue asks for structured fields, cover/item/closing slides, preview, editing, and export.</dd><dt>Rationale</dt><dd>It is recognizably valuable to a local publisher while sharply limiting the surface: one city, one format, one human-reviewed result.</dd><dt>Downsides</dt><dd>It deliberately does not solve discovery, scheduling, or every content format.</dd><dt>Confidence</dt><dd>94%</dd><dt>Complexity</dt><dd>Medium</dd></dl>
+      </article>
+
+      <article id="idea-2">
+        <div class="idea-head"><span class="rank">2</span><div><h3>Editorial Readiness Rail</h3><p>Give the draft a visible checklist that explains why a carousel is or is not ready to export: missing event date, no location, no source URL, missing image, or text that will overflow the selected slide layout. It should direct the user back to the exact item that needs attention.</p></div></div>
+        <dl><dt>Axis</dt><dd>Local-information quality</dd><dt>Basis</dt><dd><strong>direct:</strong> the brief makes review mandatory before publishing and the issue explicitly asks how missing images, links, dates, or locations should be handled.</dd><dt>Rationale</dt><dd>This is the product’s defensible behaviour: it helps publishers avoid a bad local-information post, instead of merely making a pretty but unverified graphic.</dd><dt>Downsides</dt><dd>It is guardrails, not fact checking; the user still owns accuracy.</dd><dt>Confidence</dt><dd>91%</dd><dt>Complexity</dt><dd>Low</dd></dl>
+      </article>
+
+      <article id="idea-3">
+        <div class="idea-head"><span class="rank">3</span><div><h3>Format Cards, Not Blank Canvases</h3><p>Start with a small set of editorial formats that encode storytelling choices: “This weekend,” “Top 5,” “Free events,” and “Family picks.” Each format says what the cover needs, what each item card shows, and how the closing slide behaves.</p></div></div>
+        <dl><dt>Axis</dt><dd>Reusable product foundation</dd><dt>Basis</dt><dd><strong>external:</strong> <a href="https://www.canva.com/instagram-posts/templates/carousel/">Canva’s carousel catalog</a> already offers thousands of templates plus a general editor; a small product wins by encoding a specific editorial job, not by matching catalog breadth.</dd><dt>Rationale</dt><dd>Format cards make later expansion cheap while keeping the first demo coherent and understandable.</dd><dt>Downsides</dt><dd>Early templates can feel restrictive if their tone and typography are not well chosen.</dd><dt>Confidence</dt><dd>87%</dd><dt>Complexity</dt><dd>Medium</dd></dl>
+      </article>
+
+      <article id="idea-4">
+        <div class="idea-head"><span class="rank">4</span><div><h3>Demo Mode Is a Product Surface</h3><p>Ship one seeded example—“5 things happening in Lisbon this weekend”—that can be opened, edited, and exported without sign-up or empty-state setup. Treat it as a genuine product path, not a throwaway mock: the data model and rendering are the same ones a real draft uses.</p></div></div>
+        <dl><dt>Axis</dt><dd>Demo legibility</dd><dt>Basis</dt><dd><strong>reasoned:</strong> a live demo is judged by the clarity of its end-to-end result. A real example lets the audience see the intended workflow before they have to understand configuration or author their own content.</dd><dt>Rationale</dt><dd>It gives you a dependable demonstration path while still proving that the system is a real app, not a static slideshow.</dd><dt>Downsides</dt><dd>The sample must remain explicitly labelled as illustrative and should not be presented as current event data.</dd><dt>Confidence</dt><dd>86%</dd><dt>Complexity</dt><dd>Low</dd></dl>
+      </article>
+
+      <article id="idea-5">
+        <div class="idea-head"><span class="rank">5</span><div><h3>Reviewable Drafts</h3><p>Persist each carousel as a draft with a simple lifecycle: editing, needs-attention, ready-to-export, exported. The value of Convex is visible here: the side-by-side editor, carousel preview, and readiness state stay in sync without inventing collaboration or an entire CMS.</p></div></div>
+        <dl><dt>Axis</dt><dd>Review and trust</dd><dt>Basis</dt><dd><strong>direct:</strong> the brief asks to preserve drafts and makes review a first-class step. <a href="https://docs.convex.dev/file-storage/overview">Convex File Storage</a> supports uploaded assets and metadata, while its documentation also makes the access-control boundary explicit.</dd><dt>Rationale</dt><dd>This creates a credible reason for persistence and a clean future path to teams, without requiring those features now.</dd><dt>Downsides</dt><dd>Do not turn draft states into a complex workflow engine or expose private asset URLs casually.</dd><dt>Confidence</dt><dd>82%</dd><dt>Complexity</dt><dd>Medium</dd></dl>
+      </article>
+
+      <article id="idea-6">
+        <div class="idea-head"><span class="rank">6</span><div><h3>DOM-first Slide System</h3><p>Represent each slide as normal application content rendered with HTML and CSS in Next.js: title, metadata, image, accent, and a small fixed set of layouts. The preview itself is the design surface; introduce a freeform canvas only when the real workflow proves it is needed.</p></div></div>
+        <dl><dt>Axis</dt><dd>Reusable product foundation</dd><dt>Basis</dt><dd><strong>reasoned:</strong> a structured local-event card has stable fields and repeatable layouts. A DOM layout gives fast iteration, responsive preview, accessibility, and predictable visual constraints; a canvas solves freedom that the chosen wedge does not yet need.</dd><dt>Rationale</dt><dd>It lets the fixed Next.js/Convex/Vercel stack carry a polished, accessible UI instead of consuming the demo with editor mechanics.</dd><dt>Downsides</dt><dd>Export fidelity needs a later, deliberate rendering decision; do not overclaim that browser preview alone is a production image pipeline.</dd><dt>Confidence</dt><dd>80%</dd><dt>Complexity</dt><dd>Medium</dd></dl>
+      </article>
+    </section>
+
+    <section id="rejection-summary">
+      <h2>Rejection Summary</h2>
+      <table>
+        <thead><tr><th>#</th><th>Considered direction</th><th>Reason rejected for the first slice</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>Full Canva-style freeform editor</td><td>Duplicates established general-purpose tooling and makes editor mechanics, not local editorial usefulness, the demo.</td></tr>
+          <tr><td>2</td><td>AI event discovery</td><td>Conflicts with the stated human-review boundary and raises freshness, provenance, and verification questions before the core workflow exists.</td></tr>
+          <tr><td>3</td><td>Direct Instagram publishing and scheduling</td><td>Explicitly out of scope; manual export is enough to demonstrate useful output.</td></tr>
+          <tr><td>4</td><td>Campaign calendar workspace</td><td>Interesting later, but requires multiple drafts and editorial planning before one draft is proven valuable.</td></tr>
+          <tr><td>5</td><td>Template marketplace</td><td>Requires a creator ecosystem and broad template infrastructure, neither of which establishes the initial product value.</td></tr>
+          <tr><td>6</td><td>Per-slide collaboration comments</td><td>Review readiness is more valuable than multi-user discussion for a first local-publisher demo.</td></tr>
+          <tr><td>7</td><td>Cross-platform adaptation</td><td>Instagram-first is a productive constraint; early multi-platform support dilutes the selected format.</td></tr>
+          <tr><td>8</td><td>Analytics and engagement scoring</td><td>Needs published-content data and a stable product loop; it cannot validate the first live demonstration.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="sources">
+      <h2>Sources &amp; References</h2>
+      <ul>
+        <li><a href="https://github.com/psampaioc/carousel-creator/blob/main/README.md">Repository README</a> — original product boundaries and workflow.</li>
+        <li><a href="https://github.com/psampaioc/carousel-creator/issues/1">Issue #1</a> — MVP questions and explicit non-goals.</li>
+        <li><a href="https://www.canva.com/instagram-posts/templates/carousel/">Canva carousel templates</a> — evidence that generic templates and freeform editing are already abundant.</li>
+        <li><a href="https://docs.convex.dev/file-storage/overview">Convex File Storage</a> — asset storage capabilities and access-control caveats.</li>
+        <li><a href="https://vercel.com/docs/deployments/overview">Vercel deployment overview</a> — preview URLs for fast, demonstrable iteration.</li>
+      </ul>
+    </section>
+    <footer class="composition-signal">Composed 2026-08-29 by ce-ideate from the Carousel Creator brief, issue #1, prior local project evidence, and current external product documentation.</footer>
+  </main>
+</body>
+</html>

@@ -8,6 +8,11 @@ graphify-out/
 build/
 dist/
 out/
+.next/
+.vercel/
+coverage/
+playwright-report/
+test-results/
 
 # Python
 __pycache__/
@@ -33,3 +38,12 @@ Thumbs.db
 # Local project configuration
 *.local
 *.local.*
+
+# Local credentials and agent state
+credentials.json
+token.json
+google-service-account*.json
+service-account*.json
+.codex/
+.Codex/
+AGENTS.md
