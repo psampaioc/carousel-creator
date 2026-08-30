@@ -18,6 +18,8 @@ const conflictValidator = v.object({
 
 export default defineSchema({
   candidates: defineTable({
+    externalRowId: v.optional(v.string()),
+    researchRunId: v.optional(v.string()),
     title: v.string(),
     startAt: v.optional(v.number()),
     endAt: v.optional(v.number()),
@@ -25,20 +27,43 @@ export default defineSchema({
     city: v.optional(v.string()),
     format: v.union(v.literal("in_person"), v.literal("online"), v.literal("hybrid")),
     status: candidateStatusValidator,
+    topicRelevance: v.optional(v.number()),
+    weekMatch: v.optional(v.boolean()),
+    geographyBand: v.optional(
+      v.union(v.literal("coimbra"), v.literal("north"), v.literal("central"), v.literal("online")),
+    ),
+    importFindings: v.optional(v.array(v.string())),
     conflicts: v.array(conflictValidator),
     sourceIds: v.array(v.id("sources")),
     imageCandidateIds: v.array(v.id("imageCandidates")),
     createdAt: v.number(),
     updatedAt: v.number(),
-  }).index("by_status", ["status"]),
+  })
+    .index("by_status", ["status"])
+    .index("by_external_row_id", ["externalRowId"]),
 
   sources: defineTable({
     candidateId: v.id("candidates"),
+    externalSourceId: v.optional(v.string()),
     url: v.string(),
     label: v.string(),
     excerpt: v.string(),
     collectedAt: v.number(),
     isOfficial: v.boolean(),
+  }).index("by_candidate", ["candidateId"]),
+
+  supportedFacts: defineTable({
+    candidateId: v.id("candidates"),
+    field: v.union(
+      v.literal("title"),
+      v.literal("startAt"),
+      v.literal("endAt"),
+      v.literal("venue"),
+      v.literal("city"),
+      v.literal("status"),
+    ),
+    value: v.string(),
+    sourceIds: v.array(v.id("sources")),
   }).index("by_candidate", ["candidateId"]),
 
   imageCandidates: defineTable({
@@ -51,6 +76,7 @@ export default defineSchema({
       v.literal("generated"),
     ),
     collectedAt: v.number(),
+    sortOrder: v.optional(v.number()),
   }).index("by_candidate", ["candidateId"]),
 
   drafts: defineTable({
