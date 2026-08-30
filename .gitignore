@@ -47,5 +47,7 @@ google-service-account*.json
 service-account*.json
 .codex/
 .Codex/
+.agents/
 AGENTS.md
 .worktrees/
+skills-lock.json
