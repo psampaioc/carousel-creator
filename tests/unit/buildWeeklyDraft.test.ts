@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { assertDraftCandidate, selectWeeklyCandidates, totalSlideCount } from "@/lib/carousel/buildWeeklyDraft";
+import { assertDraftCandidate, orderImageCandidates, reorderEventSlides, selectWeeklyCandidates, totalSlideCount } from "@/lib/carousel/buildWeeklyDraft";
 
 const candidate = (overrides = {}) => ({
   _id: "candidate-a", title: "Robotics evening", format: "in_person" as const, status: "approved", conflicts: [], importFindings: [], sourceIds: ["source-a"], imageCandidateIds: ["image-a"], ...overrides,
@@ -23,5 +23,23 @@ describe("weekly draft limits", () => {
   it("refuses unapproved or unsupported candidates", () => {
     expect(() => assertDraftCandidate(candidate({ status: "needs_attention" }))).toThrow("Only approved candidates");
     expect(() => assertDraftCandidate(candidate({ sourceIds: [] }))).toThrow("no source evidence");
+  });
+});
+
+describe("editor ordering", () => {
+  it("orders images by explicit order and provenance fallback", () => {
+    const images = orderImageCandidates([
+      { id: "generated", provenance: "generated" as const },
+      { id: "announcement", provenance: "announcement" as const },
+      { id: "official", provenance: "official" as const },
+      { id: "pinned", provenance: "generated" as const, sortOrder: 0 },
+    ]);
+
+    expect(images.map((image) => image.id)).toEqual(["pinned", "official", "announcement", "generated"]);
+  });
+
+  it("moves event slides without moving the cover or online slide", () => {
+    expect(reorderEventSlides(["cover", "one", "two", "online"], "two", "up")).toEqual(["cover", "two", "one", "online"]);
+    expect(reorderEventSlides(["cover", "one", "two", "online"], "one", "up")).toEqual(["cover", "one", "two", "online"]);
   });
 });
