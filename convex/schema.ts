@@ -17,6 +17,8 @@ const conflictValidator = v.object({
   selectedValue: v.optional(v.string()),
 });
 
+const slideKindValidator = v.union(v.literal("cover"), v.literal("event"), v.literal("online"));
+
 export default defineSchema({
   candidates: defineTable({
     externalRowId: v.optional(v.string()),
@@ -85,6 +87,23 @@ export default defineSchema({
     status: v.union(v.literal("editing"), v.literal("ready"), v.literal("exported")),
     candidateIds: v.array(v.id("candidates")),
     onlineCandidateIds: v.array(v.id("candidates")),
+    needsFinalReview: v.boolean(),
     updatedAt: v.number(),
   }).index("by_week_start", ["weekStart"]),
+
+  draftSlides: defineTable({
+    draftId: v.id("drafts"),
+    kind: slideKindValidator,
+    position: v.number(),
+    candidateId: v.optional(v.id("candidates")),
+    title: v.string(),
+    body: v.string(),
+    imageCandidateId: v.optional(v.id("imageCandidates")),
+    template: v.union(v.literal("coimbra-grid"), v.literal("poster-frame")),
+    accent: v.string(),
+    shape: v.union(v.literal("arc"), v.literal("square"), v.literal("circle")),
+    factualReviewRequired: v.boolean(),
+    finalReviewComplete: v.boolean(),
+    updatedAt: v.number(),
+  }).index("by_draft", ["draftId"]),
 });

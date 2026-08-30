@@ -1,0 +1,1 @@
+export function OnlineEventsSlide({ title, body, accent }: { title: string; body: string; accent: string }) { return <article className="instagram-slide online-slide" style={{ "--slide-accent": accent } as React.CSSProperties}><p className="slide-mark">ONE MORE THING</p><h2>{title}</h2><p>{body}</p><footer>Online additions · final slide</footer></article>; }
