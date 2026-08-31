@@ -1,10 +1,11 @@
 "use client";
 
-import { useMutation, useQuery } from "convex/react";
+import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import { useMemo, useState } from "react";
 import Link from "next/link";
 
 import { api } from "@/convex/_generated/api";
+import { authenticatedQueryArgs } from "@/lib/convex/authenticatedQuery";
 
 const monday = () => {
   const date = new Date();
@@ -14,7 +15,11 @@ const monday = () => {
 };
 
 export function WeeklyDraftBuilder() {
-  const candidates = useQuery(api.drafts.listEligible);
+  const { isLoading: isAuthLoading, isAuthenticated } = useConvexAuth();
+  const candidates = useQuery(
+    api.drafts.listEligible,
+    authenticatedQueryArgs(isAuthLoading, isAuthenticated),
+  );
   const create = useMutation(api.drafts.create);
   const [weekStart, setWeekStart] = useState(monday);
   const [inPerson, setInPerson] = useState<string[]>([]);
@@ -28,6 +33,10 @@ export function WeeklyDraftBuilder() {
     if (current.includes(id)) return setCurrent(current.filter((item) => item !== id));
     if (current.length < limit) setCurrent([...current, id]);
   };
+
+  if (isAuthLoading) return <main className="carousel-shell"><p className="loading-note">Connecting your account…</p></main>;
+
+  if (!isAuthenticated) return <main className="carousel-shell"><p className="loading-note">Sign in to build a carousel.</p></main>;
 
   if (candidates === undefined) return <main className="carousel-shell"><p className="loading-note">Loading approved events…</p></main>;
 
