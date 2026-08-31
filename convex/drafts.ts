@@ -3,6 +3,8 @@ import { v } from "convex/values";
 
 import { requireOperator } from "./authz";
 import type { Id } from "./_generated/dataModel";
+import { assertExportableDraft } from "../lib/carousel/exportGuards";
+import { isDriveFileId } from "../lib/drive/mediaCatalog";
 
 const candidateId = v.id("candidates");
 const draftId = v.id("drafts");
@@ -13,6 +15,22 @@ function assertEligible(candidate: { status: string; conflicts: Array<{ resolved
   if (candidate.conflicts.some((conflict) => !conflict.resolved)) throw new Error("Candidate has unresolved conflicts");
   if (candidate.importFindings?.length) throw new Error("Candidate has unresolved import findings");
   if (!candidate.sourceIds.length) throw new Error("Candidate has no source evidence");
+}
+
+async function assertSelectedSlideImages(
+  ctx: { db: { get: (id: Id<"imageCandidates">) => Promise<{ candidateId: Id<"candidates">; driveFileId: string } | null> } },
+  slides: Array<{ kind: string; candidateId?: Id<"candidates">; imageCandidateId?: Id<"imageCandidates"> }>,
+) {
+  for (const slide of slides) {
+    if (slide.kind !== "event" || !slide.candidateId || !slide.imageCandidateId) {
+      if (slide.kind === "event") throw new Error("Every event slide needs a selected image");
+      continue;
+    }
+    const image = await ctx.db.get(slide.imageCandidateId);
+    if (!image || image.candidateId !== slide.candidateId || !isDriveFileId(image.driveFileId)) {
+      throw new Error("Every event slide needs an available selected image");
+    }
+  }
 }
 
 export const listEligible = queryGeneric({
@@ -51,7 +69,7 @@ export const create = mutationGeneric({
     const now = Date.now();
     const existing = await ctx.db.query("drafts").withIndex("by_week_start", (q) => q.eq("weekStart", args.weekStart)).unique();
     if (existing) throw new Error("A weekly draft already exists for this Monday");
-    const id = await ctx.db.insert("drafts", { ...args, status: "editing", needsFinalReview: false, updatedAt: now });
+    const id = await ctx.db.insert("drafts", { ...args, status: "editing", needsFinalReview: false, revision: 1, updatedAt: now });
     await ctx.db.insert("draftSlides", { draftId: id, kind: "cover", position: 0, title: "Coimbra / next week", body: "Engineering, technology and ideas worth leaving the house for.", template: "coimbra-grid", accent: "#236b4b", shape: "arc", factualReviewRequired: false, finalReviewComplete: true, updatedAt: now });
     for (const [index, candidateId] of args.candidateIds.entries()) {
       const candidate = selected.find((item) => item?._id === candidateId)!;
@@ -111,9 +129,9 @@ export const updateSlide = mutationGeneric({
       finalReviewComplete: factualReviewRequired ? false : changes.finalReviewComplete,
       updatedAt: Date.now(),
     });
-    if (factualReviewRequired) {
-      await ctx.db.patch(slide.draftId, { needsFinalReview: true, updatedAt: Date.now() });
-    }
+    const draft = await ctx.db.get(slide.draftId);
+    if (!draft) throw new Error("Draft not found");
+    await ctx.db.patch(slide.draftId, { needsFinalReview: factualReviewRequired ? true : draft.needsFinalReview, status: "editing", revision: draft.revision + 1, updatedAt: Date.now() });
   },
 });
 
@@ -131,6 +149,9 @@ export const moveSlide = mutationGeneric({
     const adjacent = eventSlides[destination];
     await ctx.db.patch(slide._id, { position: adjacent.position, updatedAt: Date.now() });
     await ctx.db.patch(adjacent._id, { position: slide.position, updatedAt: Date.now() });
+    const draft = await ctx.db.get(slide.draftId);
+    if (!draft) throw new Error("Draft not found");
+    await ctx.db.patch(slide.draftId, { status: "editing", revision: draft.revision + 1, updatedAt: Date.now() });
   },
 });
 
@@ -143,6 +164,66 @@ export const completeSlideReview = mutationGeneric({
     await ctx.db.patch(slide._id, { factualReviewRequired: false, finalReviewComplete: true, updatedAt: Date.now() });
     const slides = await ctx.db.query("draftSlides").withIndex("by_draft", (q) => q.eq("draftId", slide.draftId)).collect();
     const hasPendingReview = slides.some((item) => item._id !== slide._id && item.factualReviewRequired && !item.finalReviewComplete);
-    await ctx.db.patch(slide.draftId, { needsFinalReview: hasPendingReview, updatedAt: Date.now() });
+    const draft = await ctx.db.get(slide.draftId);
+    if (!draft) throw new Error("Draft not found");
+    await ctx.db.patch(slide.draftId, { needsFinalReview: hasPendingReview, status: "editing", revision: draft.revision + 1, updatedAt: Date.now() });
+  },
+});
+
+export const getExportManifest = queryGeneric({
+  args: { draftId },
+  handler: async (ctx, args) => {
+    await requireOperator(ctx);
+    const draft = await ctx.db.get(args.draftId);
+    if (!draft) throw new Error("Draft not found");
+    const slides = (await ctx.db.query("draftSlides").withIndex("by_draft", (q) => q.eq("draftId", args.draftId)).collect()).sort((a, b) => a.position - b.position);
+    if (!slides.length || slides.length > 10) throw new Error("Draft must contain between one and ten slides");
+    const selectedIds = [...draft.candidateIds, ...draft.onlineCandidateIds];
+    const selected = await Promise.all(selectedIds.map((id) => ctx.db.get(id)));
+    if (selected.some((candidate) => !candidate)) throw new Error("A selected event is missing");
+    assertExportableDraft({
+      needsFinalReview: draft.needsFinalReview,
+      slides: slides.map((slide) => ({
+        kind: slide.kind,
+        position: slide.position,
+        candidateId: slide.candidateId ? String(slide.candidateId) : undefined,
+        imageCandidateId: slide.imageCandidateId ? String(slide.imageCandidateId) : undefined,
+        finalReviewComplete: slide.finalReviewComplete,
+      })),
+      candidates: selected.map((candidate) => ({
+        _id: String(candidate!._id),
+        status: candidate!.status,
+        conflicts: candidate!.conflicts,
+        importFindings: candidate!.importFindings,
+        sourceIds: candidate!.sourceIds.map(String),
+        imageCandidateIds: candidate!.imageCandidateIds.map(String),
+      })),
+    });
+    await assertSelectedSlideImages(ctx, slides);
+    return { weekStart: draft.weekStart, slideCount: slides.length, revision: draft.revision };
+  },
+});
+
+export const markExported = mutationGeneric({
+  args: { draftId },
+  handler: async (ctx, args) => {
+    await requireOperator(ctx);
+    const draft = await ctx.db.get(args.draftId);
+    if (!draft) throw new Error("Draft not found");
+    const slides = await ctx.db.query("draftSlides").withIndex("by_draft", (q) => q.eq("draftId", args.draftId)).collect();
+    const exportFiles = (await ctx.db.query("draftExportFiles").withIndex("by_draft", (q) => q.eq("draftId", args.draftId)).collect()).filter((file) => file.revision === draft.revision).sort((a, b) => a.position - b.position);
+    if (exportFiles.length !== slides.length || exportFiles.some((file, position) => file.position !== position)) throw new Error("Every slide must upload before export completes");
+    if (draft.needsFinalReview || slides.some((slide) => !slide.finalReviewComplete)) throw new Error("Complete factual review before export");
+    const selected = await Promise.all([...draft.candidateIds, ...draft.onlineCandidateIds].map((id) => ctx.db.get(id)));
+    if (selected.some((candidate) => !candidate)) throw new Error("A selected event is missing");
+    for (const candidate of selected) assertEligible(candidate!);
+    for (const slide of slides.filter((item) => item.kind === "event")) {
+      const candidate = selected.find((item) => item?._id === slide.candidateId);
+      if (!slide.imageCandidateId || !candidate?.imageCandidateIds.includes(slide.imageCandidateId)) throw new Error("Every event slide needs a valid selected image");
+    }
+    await assertSelectedSlideImages(ctx, slides);
+    const folderIds = new Set(exportFiles.map((file) => file.folderId));
+    if (folderIds.size !== 1) throw new Error("Exported slides must share one Drive folder");
+    await ctx.db.patch(args.draftId, { status: "exported", exportedFileIds: exportFiles.map((file) => file.fileId), exportFolderId: exportFiles[0].folderId, updatedAt: Date.now() });
   },
 });

@@ -107,3 +107,9 @@ code { display: block; overflow-wrap: anywhere; margin-top: 1.5rem; }
 .image-picker small { overflow: hidden; color: #658073; font-size: .62rem; text-overflow: ellipsis; white-space: nowrap; }
 .slide-order-controls { display: flex; gap: .5rem; }
 .review-button { border: 1px solid #28684c; border-radius: .5rem; padding: .7rem; background: #effadc; color: #245337; cursor: pointer; font-weight: 750; }
+.export-frame { width: 100%; aspect-ratio: 4 / 5; overflow: hidden; }
+.export-frame > .instagram-slide { width: 100%; height: 100%; }
+.export-panel { display: grid; gap: .8rem; margin-top: 1.3rem; padding-top: 1.2rem; border-top: 1px solid rgba(35,107,75,.18); }
+.export-panel h2 { margin: 0; }.export-panel ul { margin: 0; padding-left: 1.2rem; color: #567569; font-size: .78rem; line-height: 1.5; }
+.export-panel .button { width: 100%; }.export-blocked, .export-message { margin: 0; font-size: .75rem; line-height: 1.4; }.export-blocked, .export-error { color: #8d3535; }.export-complete { color: #236b4b; font-weight: 700; }
+.export-frame.is-exporting .instagram-slide { padding: 64px; }.export-frame.is-exporting .instagram-slide h2 { font-size: 108px; line-height: .94; }.export-frame.is-exporting .instagram-slide > p { font-size: 28px; line-height: 1.22; }.export-frame.is-exporting .slide-mark, .export-frame.is-exporting .instagram-slide footer { font-size: 18px; }.export-frame.is-exporting .slide-image-label { font-size: 16px; }.export-frame.is-exporting .online-event-list { font-size: 26px; }.export-frame.is-exporting .online-event-list strong { font-size: 30px; }
