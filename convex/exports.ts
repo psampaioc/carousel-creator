@@ -9,10 +9,10 @@ import { requireOperator } from "./authz";
 import { ensureWeekExportFolder, googleExportAccessToken, uploadPngToDrive } from "./driveMedia";
 
 export const uploadSlide = actionGeneric({
-  args: { draftId: v.id("drafts"), position: v.number(), pngBase64: v.string() },
+  args: { draftId: v.id("drafts"), attemptId: v.id("draftExportAttempts"), position: v.number(), pngBase64: v.string() },
   handler: async (ctx, args) => {
     await requireOperator(ctx);
-    const manifest = await ctx.runQuery(api.drafts.getExportManifest, { draftId: args.draftId });
+    const manifest = await ctx.runQuery(api.drafts.getExportManifest, { draftId: args.draftId, attemptId: args.attemptId });
     if (!Number.isInteger(args.position) || args.position < 0 || args.position >= manifest.slideCount) {
       throw new Error("Export position is outside this draft");
     }
@@ -23,10 +23,11 @@ export const uploadSlide = actionGeneric({
     if (bytes.length < 24 || signature.some((byte, index) => bytes[index] !== byte)) throw new Error("Rendered slide is not a PNG");
     if (bytes.readUInt32BE(16) !== 1080 || bytes.readUInt32BE(20) !== 1350) throw new Error("Rendered slide must be 1080 by 1350 pixels");
     const token = await googleExportAccessToken();
-    const folderId = await ensureWeekExportFolder(manifest.weekStart, token);
+    const createdFolderId = manifest.folderId ?? await ensureWeekExportFolder(manifest.weekStart, token);
+    const folderId: string = await ctx.runMutation(internal.exportAttempts.setFolder, { attemptId: args.attemptId, folderId: createdFolderId }) as string;
     const filename = exportFilename(manifest.weekStart, args.position);
     const fileId = await uploadPngToDrive(folderId, filename, bytes, token);
-    await ctx.runMutation(internal.exportRecords.record, { draftId: args.draftId, position: args.position, fileId, folderId, filename, revision: manifest.revision });
+    await ctx.runMutation(internal.exportRecords.record, { draftId: args.draftId, attemptId: args.attemptId, position: args.position, fileId, folderId, filename, revision: manifest.revision });
     return { fileId, filename, folderId };
   },
 });

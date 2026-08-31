@@ -9,6 +9,7 @@ import { isDriveFileId } from "../lib/drive/mediaCatalog";
 const candidateId = v.id("candidates");
 const draftId = v.id("drafts");
 const slideId = v.id("draftSlides");
+const attemptId = v.id("draftExportAttempts");
 
 function assertEligible(candidate: { status: string; conflicts: Array<{ resolved: boolean }>; importFindings?: string[]; sourceIds: unknown[] }) {
   if (candidate.status !== "approved") throw new Error("Only approved candidates can enter a draft");
@@ -171,11 +172,13 @@ export const completeSlideReview = mutationGeneric({
 });
 
 export const getExportManifest = queryGeneric({
-  args: { draftId },
+  args: { draftId, attemptId },
   handler: async (ctx, args) => {
     await requireOperator(ctx);
     const draft = await ctx.db.get(args.draftId);
     if (!draft) throw new Error("Draft not found");
+    const attempt = await ctx.db.get(args.attemptId);
+    if (!attempt || attempt.draftId !== args.draftId || attempt.revision !== draft.revision || attempt.status !== "active") throw new Error("Export attempt is no longer active for this draft revision");
     const slides = (await ctx.db.query("draftSlides").withIndex("by_draft", (q) => q.eq("draftId", args.draftId)).collect()).sort((a, b) => a.position - b.position);
     if (!slides.length || slides.length > 10) throw new Error("Draft must contain between one and ten slides");
     const selectedIds = [...draft.candidateIds, ...draft.onlineCandidateIds];
@@ -200,18 +203,20 @@ export const getExportManifest = queryGeneric({
       })),
     });
     await assertSelectedSlideImages(ctx, slides);
-    return { weekStart: draft.weekStart, slideCount: slides.length, revision: draft.revision };
+    return { weekStart: draft.weekStart, slideCount: slides.length, revision: draft.revision, folderId: attempt.folderId };
   },
 });
 
 export const markExported = mutationGeneric({
-  args: { draftId },
+  args: { draftId, attemptId },
   handler: async (ctx, args) => {
     await requireOperator(ctx);
     const draft = await ctx.db.get(args.draftId);
     if (!draft) throw new Error("Draft not found");
+    const attempt = await ctx.db.get(args.attemptId);
+    if (!attempt || attempt.draftId !== args.draftId || attempt.revision !== draft.revision || attempt.status !== "active") throw new Error("Export attempt is no longer active for this draft revision");
     const slides = await ctx.db.query("draftSlides").withIndex("by_draft", (q) => q.eq("draftId", args.draftId)).collect();
-    const exportFiles = (await ctx.db.query("draftExportFiles").withIndex("by_draft", (q) => q.eq("draftId", args.draftId)).collect()).filter((file) => file.revision === draft.revision).sort((a, b) => a.position - b.position);
+    const exportFiles = await ctx.db.query("draftExportFiles").withIndex("by_attempt_position", (q) => q.eq("attemptId", args.attemptId)).collect();
     if (exportFiles.length !== slides.length || exportFiles.some((file, position) => file.position !== position)) throw new Error("Every slide must upload before export completes");
     if (draft.needsFinalReview || slides.some((slide) => !slide.finalReviewComplete)) throw new Error("Complete factual review before export");
     const selected = await Promise.all([...draft.candidateIds, ...draft.onlineCandidateIds].map((id) => ctx.db.get(id)));
@@ -225,5 +230,6 @@ export const markExported = mutationGeneric({
     const folderIds = new Set(exportFiles.map((file) => file.folderId));
     if (folderIds.size !== 1) throw new Error("Exported slides must share one Drive folder");
     await ctx.db.patch(args.draftId, { status: "exported", exportedFileIds: exportFiles.map((file) => file.fileId), exportFolderId: exportFiles[0].folderId, updatedAt: Date.now() });
+    await ctx.db.patch(args.attemptId, { status: "completed", updatedAt: Date.now() });
   },
 });
