@@ -12,6 +12,7 @@ import type * as authz from "../authz.js";
 import type * as candidates from "../candidates.js";
 import type * as drafts from "../drafts.js";
 import type * as driveMedia from "../driveMedia.js";
+import type * as exportAttempts from "../exportAttempts.js";
 import type * as exportRecords from "../exportRecords.js";
 import type * as exports from "../exports.js";
 import type * as images from "../images.js";
@@ -30,6 +31,7 @@ declare const fullApi: ApiFromModules<{
   candidates: typeof candidates;
   drafts: typeof drafts;
   driveMedia: typeof driveMedia;
+  exportAttempts: typeof exportAttempts;
   exportRecords: typeof exportRecords;
   exports: typeof exports;
   images: typeof images;

@@ -114,6 +114,7 @@ export default defineSchema({
 
   draftExportFiles: defineTable({
     draftId: v.id("drafts"),
+    attemptId: v.id("draftExportAttempts"),
     position: v.number(),
     fileId: v.string(),
     folderId: v.string(),
@@ -122,5 +123,17 @@ export default defineSchema({
     uploadedAt: v.number(),
   })
     .index("by_draft", ["draftId"])
-    .index("by_draft_position", ["draftId", "position"]),
+    .index("by_draft_position", ["draftId", "position"])
+    .index("by_attempt_position", ["attemptId", "position"]),
+
+  draftExportAttempts: defineTable({
+    draftId: v.id("drafts"),
+    revision: v.number(),
+    status: v.union(v.literal("active"), v.literal("failed"), v.literal("completed")),
+    folderId: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_draft", ["draftId"])
+    .index("by_draft_revision", ["draftId", "revision"]),
 });
