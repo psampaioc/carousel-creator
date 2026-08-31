@@ -1,6 +1,6 @@
 "use client";
 
-import { useConvexAuth, useMutation, useQuery } from "convex/react";
+import { useAction, useConvexAuth, useMutation, useQuery } from "convex/react";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -42,14 +42,17 @@ function AuthenticatedReviewQueue() {
   const approve = useMutation(api.candidates.approve);
   const reject = useMutation(api.candidates.reject);
   const resolveConflict = useMutation(api.candidates.resolveConflict);
+  const importSheet = useAction(api.sheetImportAction.importConfiguredSheet);
   const [selectedId, setSelectedId] = useState<string>();
+  const [importing, setImporting] = useState(false);
+  const [importMessage, setImportMessage] = useState<string>();
 
   if (candidates === undefined) return <main className="review-shell"><p className="loading-note">Loading the evidence queue…</p></main>;
   const ranked = groupCandidates(candidates);
   const selected = candidates.find((candidate) => candidate._id === selectedId) ?? candidates[0];
 
   if (candidates.length === 0) {
-    return <main className="review-shell empty-review"><p className="eyebrow">Editorial review</p><h1>Your evidence queue is ready.</h1><p>Import a research row from the Google Sheet to see its source trail, ranking, conflicts, and image options here.</p><div className="empty-rule"><span>1</span> Capture sources <span>2</span> Import safely <span>3</span> Review deliberately</div></main>;
+    return <main className="review-shell empty-review"><p className="eyebrow">Editorial review</p><h1>Your evidence queue is ready.</h1><p>Start by importing the configured Google Sheet. Rows with missing evidence or inaccessible Drive media stay flagged for review instead of being silently accepted.</p><div className="empty-rule"><span>1</span> Capture sources <span>2</span> Import safely <span>3</span> Review deliberately</div><div className="empty-actions"><button className="button" disabled={importing} onClick={async () => { setImporting(true); setImportMessage(undefined); try { const result = await importSheet({}); setImportMessage(`Imported ${String(result)} research rows. The queue will refresh automatically.`); } catch (error) { setImportMessage(error instanceof Error ? error.message : "The Sheet import failed. Check its headers and sharing access, then retry."); } finally { setImporting(false); } }}>{importing ? "Importing Google Sheet…" : "Import Google Sheet"}</button><Link className="text-link" href="/carousel">Open carousel builder</Link></div>{importMessage ? <p className="import-message">{importMessage}</p> : null}</main>;
   }
 
   return (
