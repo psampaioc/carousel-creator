@@ -80,7 +80,9 @@ export default defineSchema({
     ),
     collectedAt: v.number(),
     sortOrder: v.optional(v.number()),
-  }).index("by_candidate", ["candidateId"]),
+  })
+    .index("by_candidate", ["candidateId"])
+    .index("by_drive_file_id", ["driveFileId"]),
 
   drafts: defineTable({
     weekStart: v.string(),
@@ -88,6 +90,9 @@ export default defineSchema({
     candidateIds: v.array(v.id("candidates")),
     onlineCandidateIds: v.array(v.id("candidates")),
     needsFinalReview: v.boolean(),
+    exportedFileIds: v.optional(v.array(v.string())),
+    exportFolderId: v.optional(v.string()),
+    revision: v.number(),
     updatedAt: v.number(),
   }).index("by_week_start", ["weekStart"]),
 
@@ -106,4 +111,16 @@ export default defineSchema({
     finalReviewComplete: v.boolean(),
     updatedAt: v.number(),
   }).index("by_draft", ["draftId"]),
+
+  draftExportFiles: defineTable({
+    draftId: v.id("drafts"),
+    position: v.number(),
+    fileId: v.string(),
+    folderId: v.string(),
+    filename: v.string(),
+    revision: v.number(),
+    uploadedAt: v.number(),
+  })
+    .index("by_draft", ["draftId"])
+    .index("by_draft_position", ["draftId", "position"]),
 });
