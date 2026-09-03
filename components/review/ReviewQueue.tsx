@@ -2,10 +2,11 @@
 
 import { useAction, useConvexAuth, useMutation, useQuery } from "convex/react";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { api } from "@/convex/_generated/api";
 import { groupCandidates } from "@/lib/ranking/geographyFallback";
+import { summarizeWorkspaceCandidates } from "@/lib/workspace/summary";
 
 import { CandidateDetail, type ReviewCandidate } from "./CandidateDetail";
 import { CandidateTable } from "./CandidateTable";
@@ -44,22 +45,61 @@ function AuthenticatedReviewQueue() {
   const resolveConflict = useMutation(api.candidates.resolveConflict);
   const importSheet = useAction(api.sheetImportAction.importConfiguredSheet);
   const [selectedId, setSelectedId] = useState<string>();
-  const [importing, setImporting] = useState(false);
-  const [importMessage, setImportMessage] = useState<string>();
+  const [syncState, setSyncState] = useState<"syncing" | "complete" | "failed">("syncing");
+  const [syncMessage, setSyncMessage] = useState<string>();
+  const didStartSync = useRef(false);
+
+  useEffect(() => {
+    if (didStartSync.current) return;
+    didStartSync.current = true;
+
+    void importSheet({})
+      .then((result) => {
+        const rows = Array.isArray(result) ? result.length : 0;
+        setSyncState("complete");
+        setSyncMessage(`Sheet synchronized: ${rows} filled ${rows === 1 ? "row" : "rows"} found.`);
+      })
+      .catch((error) => {
+        setSyncState("failed");
+        setSyncMessage(
+          error instanceof Error
+            ? error.message
+            : "The connected Sheet could not be synchronized.",
+        );
+      });
+  }, [importSheet]);
 
   if (candidates === undefined) return <main className="review-shell"><p className="loading-note">Loading the evidence queue…</p></main>;
   const ranked = groupCandidates(candidates);
   const selected = candidates.find((candidate) => candidate._id === selectedId) ?? candidates[0];
+  const summary = summarizeWorkspaceCandidates(candidates);
 
   if (candidates.length === 0) {
-    return <main className="review-shell empty-review"><p className="eyebrow">Editorial review</p><h1>Your evidence queue is ready.</h1><p>Start by importing the configured Google Sheet. Rows with missing evidence or inaccessible Drive media stay flagged for review instead of being silently accepted.</p><div className="empty-rule"><span>1</span> Capture sources <span>2</span> Import safely <span>3</span> Review deliberately</div><div className="empty-actions"><button className="button" disabled={importing} onClick={async () => { setImporting(true); setImportMessage(undefined); try { const result = await importSheet({}); setImportMessage(`Imported ${String(result)} research rows. The queue will refresh automatically.`); } catch (error) { setImportMessage(error instanceof Error ? error.message : "The Sheet import failed. Check its headers and sharing access, then retry."); } finally { setImporting(false); } }}>{importing ? "Importing Google Sheet…" : "Import Google Sheet"}</button><Link className="text-link" href="/carousel">Open carousel builder</Link></div>{importMessage ? <p className="import-message">{importMessage}</p> : null}</main>;
+    return (
+      <main className="review-shell workspace-empty">
+        <section className="workspace-intro">
+          <p className="eyebrow">This week’s carousel desk</p>
+          <h1>{syncState === "syncing" ? "Checking your research sheet." : "Your research sheet is empty."}</h1>
+          <p>
+            {syncState === "syncing"
+              ? "The workspace is pulling the connected Google Sheet now. It will show research rows here as soon as they arrive."
+              : "Add research rows to the connected Google Sheet. Events with incomplete evidence will appear here for review instead of being used in a carousel."}
+          </p>
+          {syncMessage ? <p className={`sync-message is-${syncState}`}>{syncMessage}</p> : null}
+        </section>
+      </main>
+    );
   }
 
   return (
     <main className="review-shell">
       <header className="review-header">
-        <div><p className="eyebrow">Editorial review · next calendar week</p><h1>Choose events you can stand behind.</h1></div>
-        <div><div className="queue-stats"><strong>{candidates.length}</strong><span>researched events</span><strong>{ranked.coimbra.filter((candidate) => candidate.weekMatch).length}</strong><span>in Coimbra this week</span></div><Link className="text-link" href="/carousel">Build weekly carousel</Link></div>
+        <div><p className="eyebrow">This week’s carousel desk</p><h1>Choose what makes next week.</h1><p className="workspace-lede">Your Google Sheet syncs automatically when this workspace opens. Review the evidence below, then build only from approved events.</p></div>
+        <div className="workspace-actions">
+          <div className="queue-stats"><strong>{summary.total}</strong><span>filled Sheet rows</span><strong>{summary.approved}</strong><span>approved for carousel</span><strong>{summary.readyForReview}</strong><span>ready to review</span><strong>{summary.needsAttention}</strong><span>need attention</span></div>
+          {summary.approved > 0 ? <Link className="button" href="/carousel">Create this week’s carousel</Link> : <p className="next-step">No approved events yet. Approve a complete event below to start the carousel.</p>}
+          {syncMessage ? <p className={`sync-message is-${syncState}`}>{syncMessage}</p> : null}
+        </div>
       </header>
       {ranked.isSparse ? <p className="sparse-note">Coimbra is sparse for this week. Wider-area options are shown separately below—nothing is being passed off as local.</p> : null}
       <section className="review-layout">
